@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- The imported Smykova dashboard lives in src/smykova and is rendered by the / route; its files carry @ts-nocheck because they were written for a looser TypeScript config.
