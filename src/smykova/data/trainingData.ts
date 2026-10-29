@@ -15,6 +15,7 @@ export interface ModelAvailabilityInfo {
   stockRemaining: number;
   isAvailable: boolean;
   isSoldOut: boolean;
+  sizeStock?: Record<string, number>;
 }
 
 export interface StylingLook {
@@ -138,8 +139,16 @@ export function checkModelStockAndOrderStatus(
     const orderedQty = matchedProducts.reduce((sum, p) => sum + p.unitsOrdered, 0);
     const soldQty = matchedProducts.reduce((sum, p) => sum + p.unitsSold, 0);
     const stockRemaining = Math.max(0, orderedQty - soldQty);
+    const sizeStock: Record<string, number> = {};
+    matchedProducts.forEach((p) => {
+      Object.entries(p.sizesOrdered || {}).forEach(([sz, q]) => {
+        const left = Number(q || 0) - Number((p.sizesSold || {})[sz] || 0);
+        sizeStock[sz] = (sizeStock[sz] || 0) + Math.max(0, left);
+      });
+    });
 
     return {
+      sizeStock,
       isOrdered: orderedQty > 0,
       orderedQty,
       soldQty,
@@ -181,7 +190,22 @@ export function checkModelStockAndOrderStatus(
   };
 }
 
+export function formatSizeStock(info: ModelAvailabilityInfo): string {
+  const e = Object.entries(info.sizeStock || {});
+  return e.length ? e.map(([sz, q]) => `${sz}: ${q}`).join(' · ') : '';
+}
+
 export function formatAvailabilityLabels(info: ModelAvailabilityInfo, lang: TrainingLanguage) {
+  const r = formatAvailabilityLabelsBase(info, lang);
+  const sz = formatSizeStock(info);
+  if (sz && info.isAvailable) {
+    r.availabilityBadge = sz;
+    r.shortStatus = `${r.shortStatus} · ${sz}`;
+  }
+  return r;
+}
+
+function formatAvailabilityLabelsBase(info: ModelAvailabilityInfo, lang: TrainingLanguage) {
   switch (lang) {
     case 'it':
       return {

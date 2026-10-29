@@ -1,5 +1,6 @@
 // @ts-nocheck -- imported code, written for a looser TypeScript config
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { loadCollectionCsv, findCollectionRow, trainingDataFromCsv, CollectionRow } from '../data/collectionCsv';
 import {
   ModelTrainingData,
   TrainingLanguage,
@@ -51,12 +52,23 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
   const [customJson, setCustomJson] = useState<any | null>(null);
   const [showJsonUploader, setShowJsonUploader] = useState(false);
 
+  const [csvRows, setCsvRows] = useState<CollectionRow[] | null>(null);
+  useEffect(() => {
+    loadCollectionCsv().then(setCsvRows).catch((e) => console.error('CSV collezione', e));
+  }, []);
+  const csvRow = useMemo(() => (csvRows ? findCollectionRow(csvRows, modelName) : null), [csvRows, modelName]);
+  const modelStock = useMemo(
+    () => checkModelStockAndOrderStatus(modelName, products, orders),
+    [modelName, products, orders]
+  );
+
   // Compute base training data
   const trainingData = useMemo<ModelTrainingData>(() => {
     if (customJson && customJson.modelName) {
       // If user uploaded a custom JSON matching Fonte A, C, D, E, 4
       return customJson as ModelTrainingData;
     }
+    if (csvRow) return trainingDataFromCsv(csvRow, image);
     return getModelTrainingData(
       modelName,
       modelNumber,
@@ -65,7 +77,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
       colorName,
       fabrication
     );
-  }, [modelName, modelNumber, image, silhouette, colorName, fabrication, customJson]);
+  }, [modelName, modelNumber, image, silhouette, colorName, fabrication, customJson, csvRow]);
 
   const htmlOutput = useMemo(() => {
     return generateTrainingHtmlOutput(trainingData, lang, products, orders);
@@ -349,6 +361,32 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
             </div>
           </div>
 
+          {/* Disponibilità per taglia */}
+          <div className="mt-8">
+            <div className="border-b border-stone-200 pb-2">
+              <h2 className="text-xs font-bold tracking-[0.18em] text-stone-600 uppercase">
+                {lang === 'ru' ? 'НАЛИЧИЕ ПО РАЗМЕРАМ' : lang === 'en' ? 'AVAILABILITY BY SIZE' : lang === 'pl' ? 'DOSTĘPNOŚĆ WG ROZMIARU' : 'DISPONIBILITÀ PER TAGLIA'}
+              </h2>
+            </div>
+            {Object.keys(modelStock.sizeStock || {}).length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {Object.entries(modelStock.sizeStock).map(([sz, q]) => (
+                  <div
+                    key={sz}
+                    className={`rounded-lg border px-3 py-2 text-center min-w-[64px] ${
+                      q > 0 ? 'border-emerald-300 bg-emerald-50 text-emerald-950' : 'border-stone-200 bg-stone-50 text-stone-400'
+                    }`}
+                  >
+                    <div className="text-[10px] uppercase tracking-wider">{lang === 'ru' ? 'Размер' : lang === 'en' ? 'Size' : lang === 'pl' ? 'Rozmiar' : 'Taglia'} {sz}</div>
+                    <div className="font-mono text-lg font-semibold">{q}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-stone-500">{formatAvailabilityLabels(modelStock, lang).availabilityBadge}</p>
+            )}
+          </div>
+
           {/* SECTION 1: DESCRIZIONE / ОПИСАНИЕ */}
           <div className="mt-8">
             <div className="border-b border-stone-200 pb-2">
@@ -389,7 +427,8 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
             </div>
           </div>
 
-          {/* SECTION 3: STYLING & VETRINE / СТАЙЛИНГ И СОЧЕТАНИЯ (PDF Page 2) */}
+          {trainingData.stylingLooks[lang].length > 0 && (
+          /* SECTION 3: STYLING & VETRINE / СТАЙЛИНГ И СОЧЕТАНИЯ (PDF Page 2) */}
           <div className="mt-12">
             <div className="border-b border-stone-200 pb-2">
               <h2 className="text-xs font-bold tracking-[0.18em] text-stone-600 uppercase">
@@ -522,6 +561,8 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
               ))}
             </div>
           </div>
+
+)}
 
           {/* SECTION 4: CONSIGLI DI VENDITA / СОВЕТЫ ПО ПРОДАЖАМ (PDF Page 3) */}
           <div className="mt-12">
