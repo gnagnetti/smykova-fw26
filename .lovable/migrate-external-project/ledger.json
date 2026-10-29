@@ -1,0 +1,3 @@
+[{"capability":"code","source":"github gnagnetti/Smykova","outcome":"migrate","status":"done","next_action":"none"},
+{"capability":"database/auth","source":"none detected (client-only app)","outcome":"n/a","status":"verified","next_action":"none"},
+{"capability":"Gemini AI","source":"dependency only, no call sites","outcome":"not used","status":"verified","next_action":"none"}]
