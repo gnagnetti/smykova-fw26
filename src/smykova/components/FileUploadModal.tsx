@@ -1,5 +1,7 @@
 // @ts-nocheck -- imported code, written for a looser TypeScript config
 import React, { useState, useEffect } from 'react';
+import staticOrders from '../static/orders.xlsx.asset.json';
+import staticPhotos from '../static/photos.xlsx.asset.json';
 import { Upload, CheckCircle2, AlertCircle, FileSpreadsheet, FileText, Download, X, ArrowRight, Sparkles } from 'lucide-react';
 import {
   parseOrdersFile,
@@ -47,6 +49,20 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
       setStatusMsg(`File '${preloadedSelloutFile.name}' caricato con successo dal Convertitore.`);
     }
   }, [isOpen, preloadedSelloutFile]);
+
+  // Static databases: always preload the orders file and the photo catalog
+  useEffect(() => {
+    if (!isOpen) return;
+    const load = async (url: string, name: string) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${name}: ${res.status}`);
+      return new File([await res.blob()], name, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+    };
+    if (!ordersFile) load(staticOrders.url, '6_Orders_2026-10-28.xlsx').then(setOrdersFile).catch(console.error);
+    if (!photosFile) load(staticPhotos.url, '226FWCollectionMultilingua.xlsx').then(setPhotosFile).catch(console.error);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
