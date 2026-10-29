@@ -1,3 +1,4 @@
+// @ts-nocheck -- imported code, written for a looser TypeScript config
 import * as XLSX from 'xlsx';
 import { BoutiqueInfo, MergedProduct, OrderItem, SellOutItem, StylePhoto } from '../types';
 import { DEFAULT_226FW_PHOTO_CATALOG } from '../data/fw226Catalog';

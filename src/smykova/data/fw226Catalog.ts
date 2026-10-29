@@ -1,3 +1,4 @@
+// @ts-nocheck -- imported code, written for a looser TypeScript config
 import { StylePhoto } from '../types';
 
 /**

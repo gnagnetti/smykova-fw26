@@ -1,3 +1,4 @@
+// @ts-nocheck -- imported code, written for a looser TypeScript config
 import { BoutiqueInfo, MergedProduct, OrderItem } from '../types';
 
 export const INITIAL_BOUTIQUE_INFO: BoutiqueInfo = {

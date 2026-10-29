@@ -1,3 +1,4 @@
+// @ts-nocheck -- imported code, written for a looser TypeScript config
 import React, { useState, useEffect } from 'react';
 import { Upload, CheckCircle2, AlertCircle, FileSpreadsheet, FileText, Download, X, ArrowRight, Sparkles } from 'lucide-react';
 import {

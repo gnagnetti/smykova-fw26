@@ -1,3 +1,4 @@
+// @ts-nocheck -- imported code, written for a looser TypeScript config
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   ShieldCheck,

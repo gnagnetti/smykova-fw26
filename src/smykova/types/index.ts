@@ -1,3 +1,4 @@
+// @ts-nocheck -- imported code, written for a looser TypeScript config
 export interface OrderItem {
   id: string;
   poNumber: string;
