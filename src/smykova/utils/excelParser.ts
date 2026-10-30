@@ -471,7 +471,7 @@ export function parsePhotoCatalogFromRawRows(rawRows: any[][]): StylePhoto[] {
   let silhouetteColIdx = -1;
 
   for (let r = 0; r < Math.min(cleanedRows.length, 10); r++) {
-    const row = cleanedRows[r].map((c) => c.toLowerCase());
+    const row = (cleanedRows[r] || []).map((c) => String(c ?? '').toLowerCase());
     const hasStyle = row.some((c) =>
       c.includes('style') || c.includes('modello') || c.includes('art') || c.includes('codice') || c.includes('nome')
     );
@@ -737,7 +737,7 @@ export function parseSellOutFromRawRows(rawRows: any[][]): SellOutItem[] {
   let silhouetteColIdx = -1;
 
   for (let r = 0; r < Math.min(cleanedRows.length, 15); r++) {
-    const row = cleanedRows[r].map((c) => c.toLowerCase());
+    const row = (cleanedRows[r] || []).map((c) => String(c ?? '').toLowerCase());
     const hasStyle = row.some((c) =>
       c.includes('modello') ||
       c.includes('style') ||
