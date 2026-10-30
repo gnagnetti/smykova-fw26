@@ -71,9 +71,9 @@ export default function App() {
         // Search text
         if (filters.search) {
           const q = filters.search.toLowerCase();
-          const matchName = p.styleName.toLowerCase().includes(q);
-          const matchColor = (p.colorCode || p.color).toLowerCase().includes(q);
-          const matchSil = p.silhouette.toLowerCase().includes(q);
+          const matchName = (p.styleName || '').toLowerCase().includes(q);
+          const matchColor = (p.colorCode || p.color || '').toLowerCase().includes(q);
+          const matchSil = (p.silhouette || '').toLowerCase().includes(q);
           const matchFab = (p.fabrication || '').toLowerCase().includes(q);
           if (!matchName && !matchColor && !matchSil && !matchFab) return false;
         }
@@ -84,7 +84,7 @@ export default function App() {
         }
 
         // PO filter
-        if (filters.poFilter !== 'all' && !p.poNumbers.includes(filters.poFilter)) {
+        if (filters.poFilter !== 'all' && !(p.poNumbers || []).includes(filters.poFilter)) {
           return false;
         }
 
