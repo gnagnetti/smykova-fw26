@@ -109,19 +109,31 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
       if (ordersFile) {
         setStatusMsg('Elaborazione ordini d\'acquisto JOOR (multi-foglio)...');
-        const res = await parseOrdersFile(ordersFile);
-        parsedOrders = res.orders;
-        parsedInfo = { ...parsedInfo, ...res.boutiqueInfo };
+        try {
+          const res = await parseOrdersFile(ordersFile);
+          parsedOrders = res.orders;
+          parsedInfo = { ...parsedInfo, ...res.boutiqueInfo };
+        } catch (e: any) {
+          throw new Error(`File ordini "${ordersFile.name}": ${e?.message || 'formato non riconosciuto'}`);
+        }
       }
 
       if (photosFile) {
         setStatusMsg('Collegamento database foto e catalogo stili...');
-        parsedPhotos = await parsePhotoCatalogFile(photosFile);
+        try {
+          parsedPhotos = await parsePhotoCatalogFile(photosFile);
+        } catch (e: any) {
+          throw new Error(`Database foto "${photosFile.name}": ${e?.message || 'formato non riconosciuto'}`);
+        }
       }
 
       if (selloutFile) {
         setStatusMsg('Analisi report sell-out (.CSV o .XLSX)...');
-        parsedSellOuts = await parseSellOutFile(selloutFile);
+        try {
+          parsedSellOuts = await parseSellOutFile(selloutFile);
+        } catch (e: any) {
+          throw new Error(`Report sell-out "${selloutFile.name}": ${e?.message || 'formato non riconosciuto'}`);
+        }
       }
 
       setStatusMsg('Riconciliazione finale e calcolo percentuali sell-out...');

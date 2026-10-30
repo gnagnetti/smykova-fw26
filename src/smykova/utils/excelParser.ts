@@ -471,7 +471,7 @@ export function parsePhotoCatalogFromRawRows(rawRows: any[][]): StylePhoto[] {
   let silhouetteColIdx = -1;
 
   for (let r = 0; r < Math.min(cleanedRows.length, 10); r++) {
-    const row = cleanedRows[r].map((c) => c.toLowerCase());
+    const row = (cleanedRows[r] || []).map((c) => String(c ?? '').toLowerCase());
     const hasStyle = row.some((c) =>
       c.includes('style') || c.includes('modello') || c.includes('art') || c.includes('codice') || c.includes('nome')
     );
@@ -737,7 +737,7 @@ export function parseSellOutFromRawRows(rawRows: any[][]): SellOutItem[] {
   let silhouetteColIdx = -1;
 
   for (let r = 0; r < Math.min(cleanedRows.length, 15); r++) {
-    const row = cleanedRows[r].map((c) => c.toLowerCase());
+    const row = (cleanedRows[r] || []).map((c) => String(c ?? '').toLowerCase());
     const hasStyle = row.some((c) =>
       c.includes('modello') ||
       c.includes('style') ||
@@ -1201,11 +1201,13 @@ export function mergeOrderAndSellOut(
     // Level 1: Exact style name + color match
     for (const [key, grp] of productGroupMap.entries()) {
       const matchStyle = cleanStr(grp.styleName) === styleClean;
+      const grpColorCode = String(grp.colorCode ?? '');
+      const itemColour = String(item.colour ?? '');
       const matchColor =
         (colorPrefix && grp.colorPrefix === colorPrefix) ||
         (rawColorClean && grp.rawColorClean === rawColorClean) ||
-        grp.colorCode.includes(item.colour) ||
-        item.colour.includes(grp.colorCode);
+        (itemColour && grpColorCode.includes(itemColour)) ||
+        (grpColorCode && itemColour.includes(grpColorCode));
 
       if (matchStyle && matchColor) {
         matchedGroupKey = key;
@@ -1217,11 +1219,13 @@ export function mergeOrderAndSellOut(
     if (!matchedGroupKey) {
       for (const [key, grp] of productGroupMap.entries()) {
         const matchBase = grp.baseStyle === baseStyle;
+        const grpColorCode = String(grp.colorCode ?? '');
+        const itemColour = String(item.colour ?? '');
         const matchColor =
           (colorPrefix && grp.colorPrefix === colorPrefix) ||
           (rawColorClean && grp.rawColorClean === rawColorClean) ||
-          grp.colorCode.includes(item.colour) ||
-          item.colour.includes(grp.colorCode);
+          (itemColour && grpColorCode.includes(itemColour)) ||
+          (grpColorCode && itemColour.includes(grpColorCode));
 
         if (matchBase && matchColor) {
           matchedGroupKey = key;
