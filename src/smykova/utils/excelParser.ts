@@ -1201,11 +1201,13 @@ export function mergeOrderAndSellOut(
     // Level 1: Exact style name + color match
     for (const [key, grp] of productGroupMap.entries()) {
       const matchStyle = cleanStr(grp.styleName) === styleClean;
+      const grpColorCode = String(grp.colorCode ?? '');
+      const itemColour = String(item.colour ?? '');
       const matchColor =
         (colorPrefix && grp.colorPrefix === colorPrefix) ||
         (rawColorClean && grp.rawColorClean === rawColorClean) ||
-        grp.colorCode.includes(item.colour) ||
-        item.colour.includes(grp.colorCode);
+        (itemColour && grpColorCode.includes(itemColour)) ||
+        (grpColorCode && itemColour.includes(grpColorCode));
 
       if (matchStyle && matchColor) {
         matchedGroupKey = key;
@@ -1217,11 +1219,13 @@ export function mergeOrderAndSellOut(
     if (!matchedGroupKey) {
       for (const [key, grp] of productGroupMap.entries()) {
         const matchBase = grp.baseStyle === baseStyle;
+        const grpColorCode = String(grp.colorCode ?? '');
+        const itemColour = String(item.colour ?? '');
         const matchColor =
           (colorPrefix && grp.colorPrefix === colorPrefix) ||
           (rawColorClean && grp.rawColorClean === rawColorClean) ||
-          grp.colorCode.includes(item.colour) ||
-          item.colour.includes(grp.colorCode);
+          (itemColour && grpColorCode.includes(itemColour)) ||
+          (grpColorCode && itemColour.includes(grpColorCode));
 
         if (matchBase && matchColor) {
           matchedGroupKey = key;
