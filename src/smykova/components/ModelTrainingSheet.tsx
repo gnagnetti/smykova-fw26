@@ -428,7 +428,6 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
           </div>
 
           {trainingData.stylingLooks[lang].length > 0 && (
-          /* SECTION 3: STYLING & VETRINE / СТАЙЛИНГ И СОЧЕТАНИЯ (PDF Page 2) */}
           <div className="mt-12">
             <div className="border-b border-stone-200 pb-2">
               <h2 className="text-xs font-bold tracking-[0.18em] text-stone-600 uppercase">
