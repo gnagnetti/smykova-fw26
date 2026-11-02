@@ -9,6 +9,6 @@ export function VariantSizes({ model, code, color, products, orders, lang }: { m
 }
 
 export function TrainingText({ text, data, products, orders, lang }: { text: string; data: ModelTrainingData; products: MergedProduct[]; orders: OrderItem[]; lang: TrainingLanguage }) {
-  const variants = mentionedVariants(text, data.modelName, data.colors);
-  return <Fragment>{text}{variants.map((v) => <span key={v.code} className="block mt-2 text-xs text-muted-foreground">{v.color} ({v.code})<VariantSizes {...v} products={products} orders={orders} lang={lang} /></span>)}</Fragment>;
+  const variants = [...mentionedVariants(text, data.modelName, data.colors), ...(data.referencedColors || []).filter((r) => text.toLowerCase().includes(r.model.toLowerCase())).flatMap((r) => mentionedVariants(text, r.model, r.colors))];
+  return <Fragment>{text}{variants.map((v) => <span key={`${v.model}:${v.code}`} className="block mt-2 text-xs text-muted-foreground">{v.model} · {v.color} ({v.code})<VariantSizes {...v} products={products} orders={orders} lang={lang} /></span>)}</Fragment>;
 }

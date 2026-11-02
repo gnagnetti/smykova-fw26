@@ -12,6 +12,7 @@ import {
 } from '../data/trainingData';
 import { MergedProduct, OrderItem } from '../types';
 import { TrainingText, VariantSizes } from './TrainingAvailability';
+import { variantAvailability } from '../data/variantAvailability';
 import {
   Sparkles,
   Globe,
@@ -453,7 +454,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                   {/* Real-time Order & Availability breakdown badges for each item mentioned */}
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {look.items.map((item, i) => {
-                      const st = checkModelStockAndOrderStatus(item.name, products, orders);
+                      const st = item.code ? variantAvailability(item.name, item.code, '', products, orders) : checkModelStockAndOrderStatus(item.name, products, orders);
                       const lb = formatAvailabilityLabels(st, lang);
                       return (
                         <span
@@ -476,7 +477,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                   {/* Horizontal Showcase of styled items with required thumbnail and stock/order indicators */}
                   <div className="mt-4 flex flex-wrap gap-3 sm:gap-4">
                     {look.items.map((item, itemIdx) => {
-                      const status = checkModelStockAndOrderStatus(item.name, products, orders);
+                      const status = item.code ? variantAvailability(item.name, item.code, '', products, orders) : checkModelStockAndOrderStatus(item.name, products, orders);
                       const labels = formatAvailabilityLabels(status, lang);
 
                       return (

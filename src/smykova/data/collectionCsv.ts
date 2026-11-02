@@ -97,6 +97,7 @@ export function trainingDataFromCsv(row: CollectionRow, fallbackImage?: string, 
   });
   return {
     modelName: row.name,
+    referencedColors: rows.filter((r) => r.id !== row.id && stylingLooks.some((look) => look.items.some((i) => i.name === r.name))).map((r) => ({ model: r.name, colors: r.colors.map((c) => ({ code: c.code, name: all(c.name) })) })),
     modelId: `ID #${row.id}`,
     season: {
       it: 'Scheda di Formazione Autunno-Inverno 2026/2027',

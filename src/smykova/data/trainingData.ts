@@ -31,6 +31,7 @@ export interface ObjectionItem {
 }
 
 export interface ModelTrainingData {
+  referencedColors?: { model: string; colors: { code: string; name: Record<string, string> }[] }[];
   modelName: string;
   modelId: string;
   season: {
@@ -1195,7 +1196,7 @@ export function generateTrainingHtmlOutput(
 
   const escape = (s: string) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const variantHtml = (model: string, code: string, color: string) => `<div>${escape(sizeAvailabilityText(variantAvailability(model, code, color, products, orders), lang))}</div>`;
-  const textHtml = (text: string) => escape(text) + mentionedVariants(text, data.modelName, data.colors).map((v) => `<div>${escape(v.color)} (${escape(v.code)})${variantHtml(v.model, v.code, v.color)}</div>`).join('');
+  const textHtml = (text: string) => escape(text) + [...mentionedVariants(text, data.modelName, data.colors), ...(data.referencedColors || []).filter((r) => text.toLowerCase().includes(r.model.toLowerCase())).flatMap((r) => mentionedVariants(text, r.model, r.colors))].map((v) => `<div>${escape(v.model)} · ${escape(v.color)} (${escape(v.code)})${variantHtml(v.model, v.code, v.color)}</div>`).join('');
   const colorsHtml = data.colors
     .map(
       (c) =>
