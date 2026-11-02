@@ -610,16 +610,16 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                 <tbody className="divide-y divide-stone-100">
                   {trainingData.objections[lang].map((obj, idx) => (
                     <tr key={idx} className="hover:bg-amber-50/30 transition">
-                      <td className="p-3 sm:p-4 font-semibold text-stone-900 align-top bg-stone-50/30">
+                      {obj.objection && <td className="p-3 sm:p-4 font-semibold text-stone-900 align-top bg-stone-50/30">
                         <div className="flex items-start gap-2">
                           <span className="font-mono text-amber-700 font-bold">
                             {idx + 1}.
                           </span>
                           <span><TrainingText text={obj.objection} data={trainingData} products={products} orders={orders} lang={lang} /></span>
                         </div>
-                      </td>
-                      <td className="p-3 sm:p-4 text-stone-700 leading-relaxed align-top">
-                        <strong className="text-amber-950 font-medium">
+                      </td>}
+                      <td colSpan={obj.objection ? 1 : 2} className="p-3 sm:p-4 text-stone-700 leading-relaxed align-top">
+                        {obj.objection && <strong className="text-amber-950 font-medium">
                           {lang === 'ru'
                             ? 'Ответ: '
                             : lang === 'it'
@@ -627,7 +627,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                             : lang === 'en'
                             ? 'Response: '
                             : 'Odpowiedź: '}
-                        </strong>
+                        </strong>}
                         <TrainingText text={obj.response} data={trainingData} products={products} orders={orders} lang={lang} />
                       </td>
                     </tr>

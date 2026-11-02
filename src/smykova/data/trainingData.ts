@@ -1253,8 +1253,8 @@ export function generateTrainingHtmlOutput(
       .map(
         (obj) =>
           `<tr>
-        <td style="padding:10px; font-weight:600; color:#1f2937; background-color:#ffffff; vertical-align:top;">${textHtml(obj.objection)}</td>
-        <td style="padding:10px; color:#4b5563; background-color:#ffffff; vertical-align:top;">${textHtml(obj.response)}</td>
+        ${obj.objection ? `<td style="padding:10px; font-weight:600; color:#1f2937; background-color:#ffffff; vertical-align:top;">${textHtml(obj.objection)}</td>` : ''}
+        <td colspan="${obj.objection ? 1 : 2}" style="padding:10px; color:#4b5563; background-color:#ffffff; vertical-align:top;">${textHtml(obj.response)}</td>
       </tr>`
       )
       .join('')}
