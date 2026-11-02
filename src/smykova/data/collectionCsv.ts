@@ -50,7 +50,7 @@ export function parseCollectionCsv(text: string): CollectionRow[] {
     description: (r.Descrizione || '').trim(), colors: parseColors(r.Colori || ''),
     salesTips: (r['Consigli di Vendita'] || '').split(' | ').map((s) => s.trim()).filter(Boolean),
     objections: parseObjections(r['Gestione Obiezioni'] || ''),
-    stylingText: r.Abbi­namenti || r.Abbinamenti || r.Styling || r['Styling & Vetrine'] || '',
+    stylingText: r.Abbinamenti || r.Styling || r['Styling & Vetrine'] || '',
   }));
 }
 
