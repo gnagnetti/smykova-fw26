@@ -40,5 +40,5 @@ export function sizeAvailabilityText(info: ModelAvailabilityInfo, lang: string) 
 }
 
 export function mentionedVariants(text: string, model: string, colors: { code: string; name: Record<string, string> }[]) {
-  return colors.filter((c) => (c.code && new RegExp(`\\b${c.code}\\b`).test(text)) || Object.values(c.name).some((name) => name && text.toLowerCase().includes(name.toLowerCase()))).map((c) => ({ model, code: c.code, color: c.name.it }));
+  return colors.filter((c) => (c.code && new RegExp(`\\b${c.code}\\b`).test(text)) || Object.values(c.name).some((name) => name && text.toLowerCase().includes(name.toLowerCase()))).map((c) => ({ model, code: c.code, color: c.name['it'] || '' }));
 }
