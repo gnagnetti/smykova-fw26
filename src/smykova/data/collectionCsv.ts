@@ -1,6 +1,6 @@
 // @ts-nocheck -- imported code, written for a looser TypeScript config
 import collectionAsset from '../static/collection.csv.asset.json';
-import { parseCsvString } from '../utils/excelParser';
+import Papa from 'papaparse';
 import type { ModelTrainingData } from './trainingData';
 
 export interface CollectionRow {
@@ -10,6 +10,7 @@ export interface CollectionRow {
   colors: { name: string; code: string; image: string | null }[];
   salesTips: string[];
   objections: { objection: string; response: string }[];
+  stylingText: string;
 }
 
 let cache: Promise<CollectionRow[]> | null = null;
@@ -31,38 +32,36 @@ function parseColors(raw: string) {
     .filter((c) => c.name);
 }
 
-function parseObjections(raw: string) {
+export function parseObjections(raw: string) {
   return (raw || '')
     .split('||')
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => {
       const m = s.match(/^\[(.*?)\]\s*->\s*([\s\S]*)$/);
-      return m ? { objection: m[1].trim(), response: m[2].trim() } : { objection: s, response: '' };
+      return m ? { objection: m[1].trim(), response: m[2].trim() } : { objection: '', response: s };
     });
+}
+
+export function parseCollectionCsv(text: string): CollectionRow[] {
+  const { data } = Papa.parse<Record<string, string>>(text.replace(/^\uFEFF/, ''), { header: true, delimiter: ';', skipEmptyLines: true });
+  return data.filter((r) => r['Nome Modello']?.trim()).map((r) => ({
+    id: (r.ID || '').trim(), name: r['Nome Modello'].trim(),
+    description: (r.Descrizione || '').trim(), colors: parseColors(r.Colori || ''),
+    salesTips: (r['Consigli di Vendita'] || '').split(' | ').map((s) => s.trim()).filter(Boolean),
+    objections: parseObjections(r['Gestione Obiezioni'] || ''),
+    stylingText: r.Abbinamenti || r.Styling || r['Styling & Vetrine'] || '',
+  }));
 }
 
 export function loadCollectionCsv(): Promise<CollectionRow[]> {
   if (!cache) {
     cache = fetch(collectionAsset.url)
-      .then((r) => r.text())
-      .then((text) => {
-        const rows = parseCsvString(text.replace(/^\uFEFF/, ''), ';');
-        return rows
-          .slice(1)
-          .filter((r) => r && r[1])
-          .map((r) => ({
-            id: String(r[0] || '').trim(),
-            name: String(r[1] || '').trim(),
-            description: String(r[2] || '').trim(),
-            colors: parseColors(String(r[3] || '')),
-            salesTips: String(r[4] || '')
-              .split(' | ')
-              .map((s) => s.trim())
-              .filter(Boolean),
-            objections: parseObjections(String(r[5] || '')),
-          }));
+      .then((r) => {
+        if (!r.ok) throw new Error('Catalogo non disponibile');
+        return r.text();
       })
+      .then(parseCollectionCsv)
       .catch((e) => {
         cache = null;
         throw e;
@@ -84,10 +83,21 @@ export function findCollectionRow(rows: CollectionRow[], modelName: string): Col
 
 const all = <T,>(v: T) => ({ it: v, en: v, ru: v, pl: v });
 
-export function trainingDataFromCsv(row: CollectionRow, fallbackImage?: string): ModelTrainingData {
+export function trainingDataFromCsv(row: CollectionRow, fallbackImage?: string, rows: CollectionRow[] = []): ModelTrainingData {
   const firstImg = row.colors.find((c) => c.image)?.image || fallbackImage || '';
+  const sources = [row.stylingText, row.description, ...row.salesTips, ...row.objections.map((o) => o.response)].filter(Boolean);
+  const stylingLooks = sources.flatMap((source) => {
+    const items = rows.filter((other) => other.id !== row.id && new RegExp(`\\b${other.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(source)).map((other) => {
+      const match = source.match(new RegExp(`${other.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\(?([0-9]{3,4})?`, 'i'));
+      const code = match?.[1];
+      const color = other.colors.find((c) => c.code === code);
+      return { name: other.name, code, image: color?.image || other.colors.find((c) => c.image)?.image || '' };
+    });
+    return items.length || source === row.stylingText ? [{ title: items.map((i) => i.name).join(' · '), itemsListText: source, items }] : [];
+  });
   return {
     modelName: row.name,
+    referencedColors: rows.filter((r) => r.id !== row.id && stylingLooks.some((look) => look.items.some((i) => i.name === r.name))).map((r) => ({ model: r.name, colors: r.colors.map((c) => ({ code: c.code, name: all(c.name) })) })),
     modelId: `ID #${row.id}`,
     season: {
       it: 'Scheda di Formazione Autunno-Inverno 2026/2027',
@@ -103,7 +113,7 @@ export function trainingDataFromCsv(row: CollectionRow, fallbackImage?: string):
       code: c.code,
       image: c.image || firstImg,
     })),
-    stylingLooks: all([]),
+    stylingLooks: all(stylingLooks),
     salesTips: all(row.salesTips),
     objections: all(row.objections),
   };

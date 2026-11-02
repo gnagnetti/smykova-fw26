@@ -1,5 +1,6 @@
 // @ts-nocheck -- imported code, written for a looser TypeScript config
 import { MergedProduct, OrderItem } from '../types';
+import { mentionedVariants, variantAvailability, sizeAvailabilityText } from './variantAvailability';
 
 export interface StylingItem {
   name: string;
@@ -30,6 +31,7 @@ export interface ObjectionItem {
 }
 
 export interface ModelTrainingData {
+  referencedColors?: { model: string; colors: { code: string; name: Record<string, string> }[] }[];
   modelName: string;
   modelId: string;
   season: {
@@ -1192,10 +1194,13 @@ export function generateTrainingHtmlOutput(
     },
   }[lang];
 
+  const escape = (s: string) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const variantHtml = (model: string, code: string, color: string) => `<div>${escape(sizeAvailabilityText(variantAvailability(model, code, color, products, orders), lang))}</div>`;
+  const textHtml = (text: string) => escape(text) + [...mentionedVariants(text, data.modelName, data.colors), ...(data.referencedColors || []).filter((r) => text.toLowerCase().includes(r.model.toLowerCase())).flatMap((r) => mentionedVariants(text, r.model, r.colors))].map((v) => `<div>${escape(v.model)} · ${escape(v.color)} (${escape(v.code)})${variantHtml(v.model, v.code, v.color)}</div>`).join('');
   const colorsHtml = data.colors
     .map(
       (c) =>
-        `<span><strong>${c.name[lang]} (${c.code})</strong> <img src="${c.image}" style="width:120px; border-radius:4px; margin:5px;" alt="${c.name[lang]}"></span>`
+        `<span><strong>${escape(c.name[lang])} (${escape(c.code)})</strong>${variantHtml(data.modelName, c.code, c.name.it)} <img src="${escape(c.image)}" style="width:120px; border-radius:4px; margin:5px;" alt="${escape(c.name[lang])}"></span>`
     )
     .join(' &nbsp; ');
 
@@ -1203,14 +1208,14 @@ export function generateTrainingHtmlOutput(
     .map((look) => {
       const itemsWithImgs = look.items
         .map((item) => {
-          const status = checkModelStockAndOrderStatus(item.name, products, orders);
+          const status = item.code ? variantAvailability(item.name, item.code, '', products, orders) : checkModelStockAndOrderStatus(item.name, products, orders);
           const labels = formatAvailabilityLabels(status, lang);
           const badgeBg = status.isAvailable ? '#f0fdf4' : status.isOrdered ? '#fef2f2' : '#f5f5f4';
           const badgeColor = status.isAvailable ? '#166534' : status.isOrdered ? '#991b1b' : '#57534e';
           const badgeBorder = status.isAvailable ? '#bbf7d0' : status.isOrdered ? '#fecaca' : '#e7e5e4';
 
           return `<div style="display:inline-block; margin:6px; vertical-align:top; border:1px solid #e7e5e4; border-radius:6px; padding:8px; background:#fff; text-align:center; max-width:140px;">
-            <strong style="font-size:12px; display:block; margin-bottom:2px;">${item.name}</strong>
+            <strong style="font-size:12px; display:block; margin-bottom:2px;">${escape(item.name)} ${escape(item.code || '')}</strong>${item.code ? variantHtml(item.name, item.code, '') : ''}
             <img src="${item.image}" style="width:120px; height:140px; object-fit:contain; border-radius:4px; margin:4px 0;" alt="${item.name}">
             <div style="font-size:10px; margin-top:3px; padding:2px 4px; border-radius:3px; background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; font-weight:600;">
               ${labels.orderedBadge}
@@ -1224,7 +1229,7 @@ export function generateTrainingHtmlOutput(
 
       return `<div style="margin-bottom:18px;">
         <h4 style="margin:6px 0; color:#5c4033; font-size:14px; font-weight:bold;">${look.title}</h4>
-        <p style="margin:4px 0 8px 0; font-size:13px; color:#444;">${look.itemsListText}</p>
+        <p style="margin:4px 0 8px 0; font-size:13px; color:#444;">${textHtml(look.itemsListText)}</p>
         <div style="display:flex; flex-wrap:wrap; align-items:flex-start; gap:8px;">${itemsWithImgs}</div>
       </div>`;
     })
@@ -1233,7 +1238,7 @@ export function generateTrainingHtmlOutput(
   const tipsHtml = `<ol style="margin-top:6px; padding-left:20px; line-height:1.6; font-size:13px; color:#333;">${data.salesTips[
     lang
   ]
-    .map((tip) => `<li style="margin-bottom:6px;">${tip}</li>`)
+    .map((tip) => `<li style="margin-bottom:6px;">${textHtml(tip)}</li>`)
     .join('')}</ol>`;
 
   const objectionsHtml = `<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse; font-size:13px; border-color:#e5e7eb; margin-top:8px;">
@@ -1248,8 +1253,8 @@ export function generateTrainingHtmlOutput(
       .map(
         (obj) =>
           `<tr>
-        <td style="padding:10px; font-weight:600; color:#1f2937; background-color:#ffffff; vertical-align:top;">${obj.objection}</td>
-        <td style="padding:10px; color:#4b5563; background-color:#ffffff; vertical-align:top;">${obj.response}</td>
+        ${obj.objection ? `<td style="padding:10px; font-weight:600; color:#1f2937; background-color:#ffffff; vertical-align:top;">${textHtml(obj.objection)}</td>` : ''}
+        <td colspan="${obj.objection ? 1 : 2}" style="padding:10px; color:#4b5563; background-color:#ffffff; vertical-align:top;">${textHtml(obj.response)}</td>
       </tr>`
       )
       .join('')}
@@ -1271,7 +1276,7 @@ export function generateTrainingHtmlOutput(
 
   <div style="margin-bottom:20px;">
     <h3 style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#854d0e; border-bottom:1px solid #fef08a; padding-bottom:4px; margin-bottom:8px;">${titles.desc}</h3>
-    <p style="font-size:13.5px; line-height:1.65; color:#292524; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${data.description[lang]}</p>
+    <p style="font-size:13.5px; line-height:1.65; color:#292524; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${textHtml(data.description[lang])}</p>
   </div>
 
   <div style="margin-bottom:20px;">

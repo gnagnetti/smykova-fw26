@@ -11,6 +11,8 @@ import {
   formatAvailabilityLabels,
 } from '../data/trainingData';
 import { MergedProduct, OrderItem } from '../types';
+import { TrainingText, VariantSizes } from './TrainingAvailability';
+import { variantAvailability } from '../data/variantAvailability';
 import {
   Sparkles,
   Globe,
@@ -68,7 +70,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
       // If user uploaded a custom JSON matching Fonte A, C, D, E, 4
       return customJson as ModelTrainingData;
     }
-    if (csvRow) return trainingDataFromCsv(csvRow, image);
+    if (csvRow) return trainingDataFromCsv(csvRow, image, csvRows || []);
     return getModelTrainingData(
       modelName,
       modelNumber,
@@ -77,7 +79,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
       colorName,
       fabrication
     );
-  }, [modelName, modelNumber, image, silhouette, colorName, fabrication, customJson, csvRow]);
+  }, [modelName, modelNumber, image, silhouette, colorName, fabrication, customJson, csvRow, csvRows]);
 
   const htmlOutput = useMemo(() => {
     return generateTrainingHtmlOutput(trainingData, lang, products, orders);
@@ -395,7 +397,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
               </h2>
             </div>
             <p className="mt-3.5 text-sm sm:text-base leading-relaxed text-stone-800 font-sans-clean text-justify">
-              {trainingData.description[lang]}
+              <TrainingText text={trainingData.description[lang]} data={trainingData} products={products} orders={orders} lang={lang} />
             </p>
           </div>
 
@@ -422,6 +424,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                   <div className="mt-2 text-xs font-medium text-stone-900">
                     {color.name[lang]} ({color.code})
                   </div>
+                  <VariantSizes model={trainingData.modelName} code={color.code} color={color.name.it} products={products} orders={orders} lang={lang} />
                 </div>
               ))}
             </div>
@@ -445,13 +448,13 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                     {look.title}
                   </h3>
                   <p className="mt-1 text-xs text-stone-600 font-mono">
-                    {look.itemsListText}
+                    <TrainingText text={look.itemsListText} data={trainingData} products={products} orders={orders} lang={lang} />
                   </p>
 
                   {/* Real-time Order & Availability breakdown badges for each item mentioned */}
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
                     {look.items.map((item, i) => {
-                      const st = checkModelStockAndOrderStatus(item.name, products, orders);
+                      const st = item.code ? variantAvailability(item.name, item.code, '', products, orders) : checkModelStockAndOrderStatus(item.name, products, orders);
                       const lb = formatAvailabilityLabels(st, lang);
                       return (
                         <span
@@ -474,7 +477,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                   {/* Horizontal Showcase of styled items with required thumbnail and stock/order indicators */}
                   <div className="mt-4 flex flex-wrap gap-3 sm:gap-4">
                     {look.items.map((item, itemIdx) => {
-                      const status = checkModelStockAndOrderStatus(item.name, products, orders);
+                      const status = item.code ? variantAvailability(item.name, item.code, '', products, orders) : checkModelStockAndOrderStatus(item.name, products, orders);
                       const labels = formatAvailabilityLabels(status, lang);
 
                       return (
@@ -514,6 +517,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                           >
                             {item.name}
                           </span>
+                          {item.code && <span className="text-xs text-muted-foreground">({item.code})<VariantSizes model={item.name} code={item.code} color="" products={products} orders={orders} lang={lang} /></span>}
                           {item.role && (
                             <span
                               className="text-[10px] text-stone-400 text-center truncate w-full"
@@ -577,7 +581,7 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 font-bold text-amber-900 text-xs mt-0.5">
                     {idx + 1}
                   </span>
-                  <span>{tip}</span>
+                  <span><TrainingText text={tip} data={trainingData} products={products} orders={orders} lang={lang} /></span>
                 </li>
               ))}
             </ol>
@@ -606,16 +610,16 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                 <tbody className="divide-y divide-stone-100">
                   {trainingData.objections[lang].map((obj, idx) => (
                     <tr key={idx} className="hover:bg-amber-50/30 transition">
-                      <td className="p-3 sm:p-4 font-semibold text-stone-900 align-top bg-stone-50/30">
+                      {obj.objection && <td className="p-3 sm:p-4 font-semibold text-stone-900 align-top bg-stone-50/30">
                         <div className="flex items-start gap-2">
                           <span className="font-mono text-amber-700 font-bold">
                             {idx + 1}.
                           </span>
-                          <span>{obj.objection}</span>
+                          <span><TrainingText text={obj.objection} data={trainingData} products={products} orders={orders} lang={lang} /></span>
                         </div>
-                      </td>
-                      <td className="p-3 sm:p-4 text-stone-700 leading-relaxed align-top">
-                        <strong className="text-amber-950 font-medium">
+                      </td>}
+                      <td colSpan={obj.objection ? 1 : 2} className="p-3 sm:p-4 text-stone-700 leading-relaxed align-top">
+                        {obj.objection && <strong className="text-amber-950 font-medium">
                           {lang === 'ru'
                             ? 'Ответ: '
                             : lang === 'it'
@@ -623,13 +627,14 @@ export const ModelTrainingSheet: React.FC<ModelTrainingSheetProps> = ({
                             : lang === 'en'
                             ? 'Response: '
                             : 'Odpowiedź: '}
-                        </strong>
-                        {obj.response}
+                        </strong>}
+                        <TrainingText text={obj.response} data={trainingData} products={products} orders={orders} lang={lang} />
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {trainingData.objections[lang].length === 0 && <p className="p-4 text-sm text-muted-foreground">{lang === 'ru' ? 'В каталоге нет данных по возражениям.' : lang === 'en' ? 'No objection handling provided in the catalog.' : lang === 'pl' ? 'Brak danych o obiekcjach w katalogu.' : 'Gestione obiezioni non presente nel catalogo.'}</p>}
             </div>
           </div>
 
